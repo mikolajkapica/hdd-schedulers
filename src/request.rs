@@ -1,42 +1,51 @@
-struct Request {
-    status: RequestStatus,
-    track_number: i32,
-    arrival_time: i32,
-    deadline_time: i32,
+#[derive(Clone, Debug, PartialEq)]
+pub struct Request {
+    id: u32,
+    pub status: RequestStatus,
+    pub track_number: u32,
+    pub arrival_time: u32,
+    pub deadline_time: u32,
 }
 
 impl Request {
-    fn new(status: RequestStatus, track_number: i32, arrival_time: i32, deadline_time: i32) -> Request {
+    fn new(id: u32, status: RequestStatus, track_number: u32, arrival_time: u32, deadline_time: u32) -> Request {
         Request {
+            id,
             status,
             track_number,
             arrival_time,
             deadline_time,
         }
     }
+    pub fn set_status(&mut self, status: RequestStatus) {
+        self.status = status;
+    }
 }
 
-enum RequestStatus {
+#[derive(PartialEq, Clone, Debug)]
+#[allow(dead_code)]
+pub enum RequestStatus {
     Normal,
     Ready,
     RealTime,
     RealTimeReady,
     Done,
+    Dead,
 }
 
 pub struct RequestGenerator {
-    number_of_tracks: i32,
-    number_of_requests: i32,
-    max_arrival_time: i32,
-    deadline_time: i32,
+    number_of_tracks: u32,
+    number_of_requests: u32,
+    max_arrival_time: u32,
+    deadline_time: u32,
 }
 
 impl RequestGenerator {
     pub fn new(
-        number_of_tracks: i32,
-        number_of_requests: i32,
-        max_arrival_time: i32,
-        deadline_time: i32,
+        number_of_tracks: u32,
+        number_of_requests: u32,
+        max_arrival_time: u32,
+        deadline_time: u32,
     ) -> RequestGenerator {
         RequestGenerator {
             number_of_tracks,
@@ -51,11 +60,11 @@ impl RequestGenerator {
         use rand::SeedableRng;
 
         let mut requests = Vec::new();
-        let mut rng = rand::rngs::StdRng::seed_from_u64(420);
+        let mut rng = rand::rngs::StdRng::seed_from_u64(412123420);
         let number_of_requests = self.number_of_requests;
         let deadline_time = self.deadline_time;
 
-        for _ in 0..number_of_requests {
+        for i in 0..number_of_requests {
             let track_number = rng.gen_range(0..self.number_of_tracks);
             let arrival_time = rng.gen_range(0..self.max_arrival_time);
             let real_time = rng.gen_range(0..100) < 5;
@@ -65,6 +74,7 @@ impl RequestGenerator {
                 RequestStatus::Normal
             };
             requests.push(Request::new(
+                i,
                 status,
                 track_number,
                 arrival_time,

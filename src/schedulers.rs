@@ -1,45 +1,66 @@
-mod schedulers;
+use crate::request::Request;
+use crate::storage_device::HardDriveDisk;
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[allow(dead_code)]
 pub enum Schedulers {
-    FCFS,
-    SSTF,
-    SCAN,
-    CSCAN,
-    EDF,
-    FDSCAN,
+    FirstComeFirstServed,
+    ShortestSeekTimeFirst,
+    Scan,
+    CScan,
+    EarliestDeadlineFirst,
+    FeasibleDeadlineScan,
 }
 
-pub fn get_next_request(scheduling_algorithm: Schedulers, requests: &Vec<Request>, hdd: &HDD) -> Option<Request> {
-    match scheduling_algorithm {
-        Schedulers::FCFS => fcfs(requests),
-        Schedulers::SSTF => sstf(requests, hdd),
-        Schedulers::SCAN => scan(requests, hdd),
-        Schedulers::CSCAN => cscan(requests, hdd),
-        Schedulers::EDF => edf(requests),
-        Schedulers::FDSCAN => fdscan(requests, hdd),
+pub fn get_next_request(scheduler: Schedulers, requests: &mut [Request], hdd: &HardDriveDisk) -> Option<Request> {
+    match scheduler {
+        Schedulers::FirstComeFirstServed => fcfs(requests),
+        Schedulers::ShortestSeekTimeFirst => sstf(requests, hdd),
+        Schedulers::Scan => scan(requests, hdd),
+        Schedulers::CScan => cscan(requests, hdd),
+        Schedulers::EarliestDeadlineFirst => edf(requests),
+        Schedulers::FeasibleDeadlineScan => fdscan(requests, hdd),
     }
 }
 
-fn fcfs(requests: &Vec<Request>) -> Option<Request> {
-    todo!("Implement FCFS");
+fn fcfs(requests: &mut [Request]) -> Option<Request> {
+    requests.sort_by_key(|request| request.arrival_time);
+    requests.first().cloned()
 }
 
-fn sstf(requests: &Vec<Request>, hdd: &HDD) -> Option<Request> {
-    todo!("Implement SSTF");
+fn sstf(requests: &mut [Request], hdd: &HardDriveDisk) -> Option<Request> {
+    requests.iter()
+        .min_by_key(|request| (request.track_number as i32 - hdd.current_track as i32).abs())
+        .cloned()
 }
 
-fn scan(requests: &Vec<Request>, hdd: &HDD) -> Option<Request> {
-    todo!("Implement SCAN");
+fn scan(requests: &[Request], hdd: &HardDriveDisk) -> Option<Request> {
+    if hdd.scan_right {
+        // filter requests which have track number greater than current track
+        requests.iter()
+            .filter(|r| r.track_number >= hdd.current_track)
+            .min_by_key(|r| r.track_number).cloned()
+    } else {
+        // filter requests which have track number less than current track
+        requests.iter()
+            .filter(|r| r.track_number <= hdd.current_track)
+            .max_by_key(|r| r.track_number).cloned()
+    }
 }
 
-fn cscan(requests: &Vec<Request>, hdd: &HDD) -> Option<Request> {
-    todo!("Implement CSCAN");
+fn cscan(requests: &mut [Request], hdd: &HardDriveDisk) -> Option<Request> {
+    requests.iter()
+        .filter(|r| r.track_number >= hdd.current_track)
+        .min_by_key(|r| r.track_number).cloned()
 }
 
-fn edf(requests: &Vec<Request>) -> Option<Request> {
-    todo!("Implement EDF");
+fn edf(requests: &[Request]) -> Option<Request> {
+    requests.iter()
+        .min_by_key(|r| r.deadline_time).cloned()
 }
 
-fn fdscan(requests: &Vec<Request>, hdd: &HDD) -> Option<Request> {
-    todo!("Implement FDSCAN");
+fn fdscan(requests: &[Request], hdd: &HardDriveDisk) -> Option<Request> {
+    requests.iter()
+        .filter(|r| r.deadline_time <= hdd.time + (r.track_number as i32 - hdd.current_track as i32).unsigned_abs())
+        .min_by_key(|r| r.deadline_time).cloned()
 }
