@@ -61,6 +61,6 @@ fn edf(requests: &[Request]) -> Option<Request> {
 
 fn fdscan(requests: &[Request], hdd: &HardDriveDisk) -> Option<Request> {
     requests.iter()
-        .filter(|r| r.deadline_time <= hdd.time + (r.track_number as i32 - hdd.current_track as i32).unsigned_abs())
+        .filter(|r| r.deadline_time >= hdd.time + (r.track_number as i32 - hdd.current_track as i32).unsigned_abs())
         .min_by_key(|r| r.deadline_time).cloned()
 }

@@ -1,9 +1,10 @@
 #[derive(Clone, Debug, PartialEq)]
 pub struct Request {
-    id: u32,
+    pub id: u32,
     pub status: RequestStatus,
     pub track_number: u32,
     pub arrival_time: u32,
+    pub waiting_time: u32,
     pub deadline_time: u32,
 }
 
@@ -14,6 +15,7 @@ impl Request {
             status,
             track_number,
             arrival_time,
+            waiting_time: 0,
             deadline_time,
         }
     }
@@ -38,6 +40,7 @@ pub struct RequestGenerator {
     number_of_requests: u32,
     max_arrival_time: u32,
     deadline_time: u32,
+    rt_chance: f32,
 }
 
 impl RequestGenerator {
@@ -46,12 +49,14 @@ impl RequestGenerator {
         number_of_requests: u32,
         max_arrival_time: u32,
         deadline_time: u32,
+        rt_chance: f32,
     ) -> RequestGenerator {
         RequestGenerator {
             number_of_tracks,
             number_of_requests,
             max_arrival_time,
             deadline_time,
+            rt_chance,
         }
     }
 
@@ -67,7 +72,7 @@ impl RequestGenerator {
         for i in 0..number_of_requests {
             let track_number = rng.gen_range(0..self.number_of_tracks);
             let arrival_time = rng.gen_range(0..self.max_arrival_time);
-            let real_time = rng.gen_range(0..100) < 5;
+            let real_time = rng.gen_range(0..100) < (self.rt_chance * 100 as f32) as u32;
             let status = if real_time {
                 RequestStatus::RealTime
             } else {
